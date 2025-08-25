@@ -1,0 +1,63 @@
+version: '3.8'
+
+services:
+  # MySQL Database Service
+  mysql:
+    image: mysql:8.0
+    container_name: loginapp-mysql
+    restart: always
+    environment:
+      MYSQL_ROOT_PASSWORD: rootpassword
+      MYSQL_DATABASE: registration_db
+      MYSQL_USER: appuser
+      MYSQL_PASSWORD: apppassword
+    ports:
+      - "3307:3306"  # External port 3307 to avoid conflicts
+    volumes:
+      - mysql_data:/var/lib/mysql
+      - ./init-db.sql:/docker-entrypoint-initdb.d/init-db.sql
+    networks:
+      - loginapp-network
+    healthcheck:
+      test: ["CMD", "mysqladmin", "ping", "-h", "localhost"]
+      timeout: 10s
+      retries: 5
+      interval: 30s
+
+  # Java Web Application Service
+  webapp:
+    build: .
+    container_name: loginapp-webapp
+    restart: always
+    ports:
+      - "8080:8080"
+    environment:
+      # Database connection settings
+      DB_HOST: mysql
+      DB_PORT: 3306
+      DB_NAME: registration_db
+      DB_USER: root
+      DB_PASSWORD: rootpassword
+      
+      # Java settings
+      JAVA_OPTS: "-Xmx512m -Xms256m"
+      CATALINA_OPTS: "-Dfile.encoding=UTF-8"
+    depends_on:
+      mysql:
+        condition: service_healthy
+    networks:
+      - loginapp-network
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8080/"]
+      timeout: 10s
+      retries: 5
+      interval: 30s
+      start_period: 60s
+
+volumes:
+  mysql_data:
+    driver: local
+
+networks:
+  loginapp-network:
+    driver: bridge
