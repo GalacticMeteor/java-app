@@ -1,3 +1,1 @@
-registration-app
-<br>
-Test33
+Simple application java (login / signup / logout)
