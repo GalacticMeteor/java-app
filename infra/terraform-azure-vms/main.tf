@@ -133,7 +133,7 @@ module "vm_jenkins" {
   admin_username = var.admin_username
   admin_password = var.admin_password
 
-  #custom_data = base64encode(templatefile("${path.module}/scripts/jenkins-setup.sh", {}))
+  custom_data = base64encode(templatefile("${path.module}/scripts/jenkins-setup.sh", {}))
 
   tags = {
     Environment = var.environment
@@ -155,7 +155,7 @@ module "vm_docker" {
   admin_username = var.admin_username
   admin_password = var.admin_password
 
-  #custom_data = base64encode(templatefile("${path.module}/scripts/docker-setup.sh", {}))
+  custom_data = base64encode(templatefile("${path.module}/scripts/docker-setup.sh", {}))
 
   tags = {
     Environment = var.environment
