@@ -1,0 +1,15 @@
+# terraform/terraform.tfvars.example
+# Copy this file to terraform.tfvars and fill in your values
+
+# Resource configuration
+resource_group_name = "rg-multiregion-devops"
+primary_location    = "North Europe"
+region_a_location   = "North Europe"    # Jenkins + Docker
+region_b_location   = "West Europe"     # Kubernetes
+
+# Environment
+environment = "dev"
+
+# VM Admin credentials
+admin_username = "azureuser"
+admin_password = "YourSecurePassword123!"  # Must be at least 12 characters

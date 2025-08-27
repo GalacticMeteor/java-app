@@ -1,0 +1,7 @@
+resource_group_name = "rg-multiregion-devops"
+primary_location    = "North Europe"
+region_a_location   = "North Europe"
+region_b_location   = "West Europe"
+environment         = "dev"
+admin_username      = "azureuser"
+admin_password      = "Password123!"
