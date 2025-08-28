@@ -28,7 +28,9 @@ pipeline {
 
         stage ("Test application"){
             steps {
-                sh "mvn test"
+                dir('app') {
+                    sh "mvn test"
+                } 
             }
         }
     }
