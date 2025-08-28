@@ -36,10 +36,10 @@ pipeline {
 
         stage('SonarQube Analysis') {
             environment {
-                SCANNER_HOME = tool 'sonar-scanner'
+                SCANNER_HOME = tool 'sonarqube-scanner'
             }
             steps {
-                withSonarQubeEnv('sonarqube-server') {
+                withSonarQubeEnv(credentialsId: 'jenkins-sonarqube-token') {
                     dir('app') {
                         sh 'mvn sonar:sonar'
                     }
