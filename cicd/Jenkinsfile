@@ -40,7 +40,9 @@ pipeline {
             }
             steps {
                 withSonarQubeEnv('sonarqube-server') {
-                    sh 'mvn sonar:sonar'
+                    dir('app') {
+                        sh 'mvn sonar:sonar'
+                    }
                 }
             }
         }
