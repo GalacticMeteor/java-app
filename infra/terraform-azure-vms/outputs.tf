@@ -15,22 +15,22 @@ output "resource_group_location" {
 # Region A - Jenkins + Docker
 output "jenkins_public_ip" {
   description = "Public IP address of Jenkins VM"
-  value       = module.vm_jenkins.public_ip_address
+  value       = module.vm_jenkins_agent.public_ip_address
 }
 
 output "jenkins_private_ip" {
   description = "Private IP address of Jenkins VM"
-  value       = module.vm_jenkins.private_ip_address
+  value       = module.vm_jenkins_agent.private_ip_address
 }
 
 output "docker_public_ip" {
   description = "Public IP address of Docker VM"
-  value       = module.vm_docker.public_ip_address
+  value       = module.vm_jenkins_master.public_ip_address
 }
 
 output "docker_private_ip" {
   description = "Private IP address of Docker VM"
-  value       = module.vm_docker.private_ip_address
+  value       = module.vm_jenkins_master.private_ip_address
 }
 
 output "region_a_vnet_id" {
@@ -77,7 +77,7 @@ output "region_b_vnet_id" {
 # Connection Information
 output "jenkins_url" {
   description = "Jenkins access URL"
-  value       = "http://${module.vm_jenkins.public_ip_address}:8080"
+  value       = "http://${module.vm_jenkins_agent.public_ip_address}:8080"
 }
 
 output "k8s_api_server" {
@@ -89,8 +89,8 @@ output "k8s_api_server" {
 output "ssh_commands" {
   description = "SSH commands to connect to VMs"
   value = {
-    jenkins     = "ssh ${var.admin_username}@${module.vm_jenkins.public_ip_address}"
-    docker      = "ssh ${var.admin_username}@${module.vm_docker.public_ip_address}"
+    jenkins     = "ssh ${var.admin_username}@${module.vm_jenkins_agent.public_ip_address}"
+    docker      = "ssh ${var.admin_username}@${module.vm_jenkins_master.public_ip_address}"
     k8s_master  = "ssh ${var.admin_username}@${module.vm_k8s_master.public_ip_address}"
     k8s_worker1 = "ssh ${var.admin_username}@${module.vm_k8s_worker1.public_ip_address}"
     k8s_worker2 = "ssh ${var.admin_username}@${module.vm_k8s_worker2.public_ip_address}"

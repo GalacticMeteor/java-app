@@ -12,4 +12,4 @@ environment = "dev"
 
 # VM Admin credentials
 admin_username = "azureuser"
-admin_password = "YourSecurePassword123!"  # Must be at least 12 characters
+admin_password = "Password123!"

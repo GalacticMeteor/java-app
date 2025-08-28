@@ -25,7 +25,7 @@ resource "azurerm_resource_group" "main" {
   }
 }
 
-# Region A - Jenkins + Docker (North Europe)
+# Region A - Jenkins + Docker + SonarQube (North Europe)
 module "vnet_region_a" {
   source = "./modules/vnet"
 
@@ -49,7 +49,7 @@ module "nsg_region_a" {
   location            = var.region_a_location
   nsg_name            = "nsg-region-a-devops"
 
-  # Security rules for Jenkins + Docker
+  # Security rules for Jenkins + Docker + SonarQube
   security_rules = [
     {
       name                       = "SSH"
@@ -96,8 +96,19 @@ module "nsg_region_a" {
       destination_address_prefix = "*"
     },
     {
-      name                       = "Docker"
+      name                       = "SonarQube"
       priority                   = 1005
+      direction                  = "Inbound"
+      access                     = "Allow"
+      protocol                   = "Tcp"
+      source_port_range          = "*"
+      destination_port_range     = "9000"
+      source_address_prefix      = "*"
+      destination_address_prefix = "*"
+    },
+    {
+      name                       = "Docker"
+      priority                   = 1006
       direction                  = "Inbound"
       access                     = "Allow"
       protocol                   = "Tcp"
@@ -120,47 +131,43 @@ resource "azurerm_subnet_network_security_group_association" "region_a" {
   network_security_group_id = module.nsg_region_a.nsg_id
 }
 
-# Jenkins VM
-module "vm_jenkins" {
+# Jenkins-agent VM (now also hosts SonarQube)
+module "vm_jenkins_agent" {
   source = "./modules/vm"
 
   resource_group_name = azurerm_resource_group.main.name
   location            = var.region_a_location
-  vm_name             = "vm-jenkins"
-  vm_size             = "Standard_B2s" # 2 vCPUs, 4GB RAM
+  vm_name             = "vm-jenkins-agent"
+  vm_size             = "Standard_B2ms" # Updated: 2 vCPUs, 8GB RAM (more memory for SonarQube)
   subnet_id           = module.vnet_region_a.subnet_id
 
   admin_username = var.admin_username
   admin_password = var.admin_password
 
-  custom_data = base64encode(templatefile("${path.module}/scripts/jenkins-setup.sh", {}))
-
   tags = {
     Environment = var.environment
     Region      = "A"
-    Role        = "Jenkins"
+    Role        = "Jenkins-agent"
   }
 }
 
-# Docker VM
-module "vm_docker" {
+# jenkins-master VM
+module "vm_jenkins_master" {
   source = "./modules/vm"
 
   resource_group_name = azurerm_resource_group.main.name
   location            = var.region_a_location
-  vm_name             = "vm-docker"
+  vm_name             = "vm-jenkins-master"
   vm_size             = "Standard_B2s" # 2 vCPUs, 4GB RAM
   subnet_id           = module.vnet_region_a.subnet_id
 
   admin_username = var.admin_username
   admin_password = var.admin_password
 
-  custom_data = base64encode(templatefile("${path.module}/scripts/docker-setup.sh", {}))
-
   tags = {
     Environment = var.environment
     Region      = "A"
-    Role        = "Docker"
+    Role        = "jenkins-master"
   }
 }
 
@@ -272,8 +279,6 @@ module "vm_k8s_master" {
   admin_username = var.admin_username
   admin_password = var.admin_password
 
-  #custom_data = base64encode(templatefile("${path.module}/scripts/k8s-master-setup.sh", {}))
-
   tags = {
     Environment = var.environment
     Region      = "B"
@@ -294,8 +299,6 @@ module "vm_k8s_worker1" {
   admin_username = var.admin_username
   admin_password = var.admin_password
 
-  #custom_data = base64encode(templatefile("${path.module}/scripts/k8s-worker-setup.sh", {}))
-
   tags = {
     Environment = var.environment
     Region      = "B"
@@ -315,8 +318,6 @@ module "vm_k8s_worker2" {
 
   admin_username = var.admin_username
   admin_password = var.admin_password
-
-  #custom_data = base64encode(templatefile("${path.module}/scripts/k8s-worker-setup.sh", {}))
 
   tags = {
     Environment = var.environment
