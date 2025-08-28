@@ -39,9 +39,9 @@ pipeline {
                 SCANNER_HOME = tool 'sonarqube-scanner'
             }
             steps {
-                withSonarQubeEnv(credentialsId: 'jenkins-sonarqube-token') {
+                withSonarQubeEnv('sonarqube') {
                     dir('app') {
-                        sh 'mvn sonar:sonar'
+                        sh 'mvn clean verify sonar:sonar'
                     }
                 }
             }
