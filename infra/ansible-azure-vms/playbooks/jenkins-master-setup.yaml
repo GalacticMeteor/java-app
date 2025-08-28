@@ -1,0 +1,207 @@
+---
+- name: Install Jenkins Master (Jenkins Only)
+  hosts: jenkins_master_server
+  become: yes
+  vars:
+    jenkins_user: azureuser  # Change this to your desired user
+    jenkins_port: 8080
+    
+  tasks:
+    # System Updates and Prerequisites
+    - name: Update apt package cache
+      apt:
+        update_cache: yes
+        upgrade: yes
+        cache_valid_time: 3600
+      
+    - name: Install system prerequisites
+      apt:
+        name:
+          - wget
+          - curl
+          - gnupg2
+          - software-properties-common
+          - apt-transport-https
+          - ca-certificates
+          - git
+          - openjdk-17-jdk
+        state: present
+        
+    # Java Configuration
+    - name: Get Java path
+      shell: readlink -f $(which java) | sed "s:bin/java::"
+      register: java_path_result
+      changed_when: false
+      
+    - name: Set JAVA_HOME in /etc/environment
+      lineinfile:
+        path: /etc/environment
+        line: "JAVA_HOME={{ java_path_result.stdout }}"
+        create: yes
+        
+    - name: Export JAVA_HOME for current session
+      set_fact:
+        java_home: "{{ java_path_result.stdout }}"
+        
+    # Jenkins Installation
+    - name: Download Jenkins GPG key
+      get_url:
+        url: https://pkg.jenkins.io/debian-stable/jenkins.io-2023.key
+        dest: /tmp/jenkins.key
+        mode: '0644'
+        
+    - name: Convert and install Jenkins GPG key
+      shell: gpg --dearmor -o /usr/share/keyrings/jenkins-keyring.gpg /tmp/jenkins.key
+      args:
+        creates: /usr/share/keyrings/jenkins-keyring.gpg
+        
+    - name: Add Jenkins repository
+      apt_repository:
+        repo: "deb [signed-by=/usr/share/keyrings/jenkins-keyring.gpg] https://pkg.jenkins.io/debian-stable binary/"
+        state: present
+        filename: jenkins
+        
+    - name: Update apt cache after adding Jenkins repo
+      apt:
+        update_cache: yes
+        
+    - name: Install Jenkins
+      apt:
+        name: jenkins
+        state: present
+        
+    - name: Set JAVA_HOME in Jenkins environment
+      lineinfile:
+        path: /etc/default/jenkins
+        regexp: '^JAVA_HOME='
+        line: "JAVA_HOME={{ java_path_result.stdout }}"
+        create: yes
+        
+    - name: Configure Jenkins port
+      lineinfile:
+        path: /etc/default/jenkins
+        regexp: '^HTTP_PORT='
+        line: "HTTP_PORT={{ jenkins_port }}"
+        
+    - name: Ensure Jenkins directories exist with proper permissions
+      file:
+        path: "{{ item }}"
+        state: directory
+        owner: jenkins
+        group: jenkins
+        mode: '0755'
+      loop:
+        - /var/lib/jenkins
+        - /var/cache/jenkins
+        - /var/log/jenkins
+        
+    - name: Start and enable Jenkins service
+      systemd:
+        name: jenkins
+        state: started
+        enabled: yes
+        daemon_reload: yes
+        
+    # Git Configuration for Jenkins (basic setup for repo access)
+    - name: Configure Git for Jenkins user
+      shell: |
+        sudo -u jenkins git config --global user.name "Jenkins Master"
+        sudo -u jenkins git config --global user.email "jenkins@localhost"
+        sudo -u jenkins git config --global init.defaultBranch main
+      args:
+        creates: /var/lib/jenkins/.gitconfig
+        
+    # Jenkins Plugins Directory Setup
+    - name: Create Jenkins plugins directory
+      file:
+        path: /var/lib/jenkins/plugins
+        state: directory
+        owner: jenkins
+        group: jenkins
+        mode: '0755'
+        
+    # Firewall Configuration
+    - name: Configure UFW firewall rules
+      ufw:
+        rule: allow
+        port: "{{ item }}"
+        proto: tcp
+      loop:
+        - '22'    # SSH
+        - "{{ jenkins_port }}"  # Jenkins Web Interface
+        - '50000' # Jenkins agent communication (JNLP)
+        
+    - name: Allow SSH from anywhere
+      ufw:
+        rule: allow
+        name: OpenSSH
+        
+    - name: Check if SSH port 22 is reachable
+      wait_for:
+        port: 22
+        state: started
+        timeout: 10
+      register: ssh_port_check
+      ignore_errors: yes
+        
+    - name: Enable UFW firewall
+      ufw:
+        state: enabled
+        policy: deny
+        direction: incoming
+      when: ssh_port_check is succeeded
+        
+    # Jenkins CLI Setup
+    - name: Wait for Jenkins to start
+      wait_for:
+        port: "{{ jenkins_port }}"
+        delay: 30
+        timeout: 300
+        
+    - name: Download Jenkins CLI
+      get_url:
+        url: "http://localhost:{{ jenkins_port }}/jnlpJars/jenkins-cli.jar"
+        dest: /opt/jenkins-cli.jar
+        mode: '0644'
+      retries: 5
+      delay: 10
+      
+    # System Configuration for Jenkins
+    - name: Increase system limits for Jenkins
+      blockinfile:
+        path: /etc/security/limits.conf
+        block: |
+          jenkins soft nofile 65536
+          jenkins hard nofile 65536
+          jenkins soft nproc 32768
+          jenkins hard nproc 32768
+        marker: "# {mark} ANSIBLE MANAGED BLOCK - Jenkins limits"
+        
+    # Cleanup
+    - name: Clean up temporary files
+      file:
+        path: /tmp/jenkins.key
+        state: absent
+        
+    # Get Jenkins initial admin password
+    - name: Get Jenkins initial admin password
+      slurp:
+        src: /var/lib/jenkins/secrets/initialAdminPassword
+      register: jenkins_initial_password
+      ignore_errors: yes
+      
+  post_tasks:
+    - name: Display installation summary
+      debug:
+        msg:
+          - "=== Jenkins Master Installation Complete ==="
+          - "Jenkins URL: http://{{ ansible_default_ipv4.address }}:{{ jenkins_port }}"
+          - "Jenkins Initial Admin Password: {{ jenkins_initial_password.content | b64decode | trim if jenkins_initial_password is succeeded else 'Check /var/lib/jenkins/secrets/initialAdminPassword' }}"
+          - "Jenkins CLI: java -jar /opt/jenkins-cli.jar -s http://localhost:{{ jenkins_port }}/"
+          - "Agent communication port: 50000 (JNLP)"
+          - "=== Next Steps ==="
+          - "1. Access Jenkins web interface and complete setup wizard"
+          - "2. Install recommended plugins"
+          - "3. Create admin user or use initial password"
+          - "4. Configure Jenkins agents in Manage Jenkins > Manage Nodes"
+          - "5. Point agents to this master at: http://{{ ansible_default_ipv4.address }}:{{ jenkins_port }}"
