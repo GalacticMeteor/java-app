@@ -78,6 +78,15 @@ pipeline {
             }
         }
 
+        stage("Scan Docker Image") {
+            steps {
+                script {
+                    sh "mkdir -p reports"
+                    sh "trivy image --format table -o reports/trivy-image-report.html ${IMAGE_NAME}:${IMAGE_TAG}"
+                }
+            }
+        }
+
         stage('Push Docker image to ACR') {
             steps {
                 dir('app') {
