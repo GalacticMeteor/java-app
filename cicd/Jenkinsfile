@@ -73,7 +73,7 @@ pipeline {
             steps {
                 script {
                     docker.withRegistry("https://${ACR_NAME}", "ACR") {
-                        dockerImage.push()
+                    dockerImage.push()
                     }
                 }
             }
