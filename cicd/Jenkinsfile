@@ -40,6 +40,15 @@ pipeline {
             }
         }
 
+        stage("File System Scan") {
+            steps {
+                script {
+                    sh "mkdir -p reports"
+                    sh "trivy fs --format table -o reports/trivy-fs-report.html ."
+                }
+            }
+        }
+
         stage('SonarQube Analysis') {
             environment {
                 SCANNER_HOME = tool 'sonarqube-scanner'
