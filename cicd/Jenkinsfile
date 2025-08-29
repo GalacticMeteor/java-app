@@ -4,8 +4,11 @@ pipeline {
         jdk 'Java17'
         maven 'Maven3'
     }
+
     environment {
-        registryName = "myImagesRegistry"
+        ACR_NAME = "myimagesregistry.azurecr.io"
+        IMAGE_NAME = "my-app"
+        IMAGE_TAG = "latest"
     }
 
     stages {
@@ -60,7 +63,7 @@ pipeline {
             steps {
                 dir('app') {
                     script {
-                        def dockerImage = docker.build("my-app:latest")
+                        def dockerImage = docker.build("${ACR_NAME}/${IMAGE_NAME}:${IMAGE_TAG}")
                     }
                 }
             }
