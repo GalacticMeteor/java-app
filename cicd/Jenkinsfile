@@ -4,6 +4,9 @@ pipeline {
         jdk 'Java17'
         maven 'Maven3'
     }
+    environment {
+        registryName = "myImagesRegistry"
+    }
 
     stages {
         stage("Cleanup workspace"){
@@ -50,6 +53,14 @@ pipeline {
         stage('Quality Gate') {
             steps {
                 waitForQualityGate abortPipeline: false
+            }
+        }
+
+        stage('Build Docker Image') {
+            steps {
+                script {
+                    dockerImage = docker.Build registryName
+                }
             }
         }
     }
