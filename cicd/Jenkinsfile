@@ -68,5 +68,15 @@ pipeline {
                 }
             }
         }
+
+        stage('Push Docker image to ACR') {
+            steps {
+                script {
+                    docker.withRegistry("https://${ACR_NAME}", "ACR") {
+                        dockerImage.push()
+                    }
+                }
+            }
+        }
     }
 }
