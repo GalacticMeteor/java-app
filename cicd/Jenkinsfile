@@ -63,7 +63,7 @@ pipeline {
             steps {
                 dir('app') {
                     script {
-                        def dockerImage = docker.build("${ACR_NAME}/${IMAGE_NAME}:${IMAGE_TAG}")
+                        dockerImage = docker.build("${ACR_NAME}/${IMAGE_NAME}:${IMAGE_TAG}")
                     }
                 }
             }
