@@ -106,8 +106,8 @@ pipeline {
             steps {
                 dir('app') {
                     script {
-                        sh "docker rmi ${IMAGE_NAME}:${IMAGE_TAG}"
-                        sh "docker rmi ${IMAGE_NAME}:latest"
+                        sh "docker rmi ${ACR_NAME}/${IMAGE_NAME}:${IMAGE_TAG}"
+                        sh "docker rmi ${ACR_NAME}/${IMAGE_NAME}:latest"
                     }
                 }
             }
