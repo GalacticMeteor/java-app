@@ -6,7 +6,7 @@ pipeline {
     }
 
     environment {
-        APP_NAME "devops-app"
+        APP_NAME = "devops-app"
         ACR_NAME = "myimagesregistry.azurecr.io"
         RELEASE = "1.0.0"
         IMAGE_NAME = "${APP_NAME}"
