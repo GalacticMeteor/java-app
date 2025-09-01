@@ -94,7 +94,7 @@ pipeline {
                 dir('app') {
                     script {
                         docker.withRegistry("https://${ACR_NAME}", "ACR") {
-                            dockerImage.push("${IMAGE_NAME}")
+                            dockerImage.push("${IMAGE_TAG}")
                             dockerImage.push('latest')
                         }
                     }
