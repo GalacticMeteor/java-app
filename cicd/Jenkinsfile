@@ -84,7 +84,7 @@ pipeline {
             steps {
                 script {
                     sh "mkdir -p reports"
-                    sh "trivy image --format table -o reports/trivy-image-report.html ${IMAGE_NAME}:${IMAGE_TAG}"
+                    sh "trivy image --format table -o reports/trivy-image-report.html ${ACR_NAME}/${IMAGE_NAME}:${IMAGE_TAG}"
                 }
             }
         }
