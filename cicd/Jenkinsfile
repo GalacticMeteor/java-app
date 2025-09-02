@@ -7,8 +7,9 @@ pipeline {
 
     environment {
         APP_NAME = "devops-app"
-        ACR_NAME = "myimagesregistry.azurecr.io"
         RELEASE = "1.0.0"
+        DOCKER_USER = "galacticmeteor"
+        DOCKER_PASS = "dockerhub"
         IMAGE_NAME = "${APP_NAME}"
         IMAGE_TAG = "${RELEASE}-${BUILD_NUMBER}"
     }
@@ -74,7 +75,9 @@ pipeline {
             steps {
                 dir('app') {
                     script {
-                        dockerImage = docker.build("${ACR_NAME}/${IMAGE_NAME}:${IMAGE_TAG}")
+                        docker.withRegistry('', DOCKER_PASS) {
+                            docker_image = docker.build "${IMAGE_NAME}"
+                        }
                     }
                 }
             }
@@ -84,16 +87,16 @@ pipeline {
             steps {
                 script {
                     sh "mkdir -p reports"
-                    sh "trivy image --format table -o reports/trivy-image-report.html ${ACR_NAME}/${IMAGE_NAME}:${IMAGE_TAG}"
+                    sh "trivy image --format table -o reports/trivy-image-report.html ${IMAGE_NAME}"
                 }
             }
         }
 
-        stage('Push Docker image to ACR') {
+        stage('Push Docker image to dockerhub') {
             steps {
                 dir('app') {
                     script {
-                        docker.withRegistry("https://${ACR_NAME}", "ACR") {
+                        docker.withRegistry("", DOCKER_PASS) {
                             dockerImage.push("${IMAGE_TAG}")
                             dockerImage.push('latest')
                         }
