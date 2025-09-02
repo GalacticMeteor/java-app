@@ -96,7 +96,7 @@ pipeline {
             steps {
                 dir('app') {
                         script {
-                            def dockerImage = docker.image("${IMAGE_NAME}:${IMAGE_TAG}")
+                            def dockerImage = docker.image("${DOCKER_USER}/${IMAGE_NAME}:${IMAGE_TAG}")
                             docker.withRegistry('https://index.docker.io/v1/', 'dockerhub') {
                                 dockerImage.push()
                                 dockerImage.push('latest')
