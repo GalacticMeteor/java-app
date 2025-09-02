@@ -121,12 +121,9 @@ pipeline {
         stage ('Trigger CD pipeline') {
             steps {
                 script {
-                    sh """curl -v -k --user chiheb:${JENKINS_API_TOKEN} \
-                        -X POST \
-                        -H 'cache-control: no-cache' \
-                        -H 'content-type: application/x-www-form-urlencoded' \
-                        --data 'IMAGE_TAG=${IMAGE_TAG}' \
-                        'http://jenkins-devops-server.northeurope.cloudapp.azure.com:8080/job/argo-cd/buildWithParameters?token=gitops-token'"""
+                    build job: 'argo-cd', 
+                        parameters: [string(name: 'IMAGE_TAG', value: "${IMAGE_TAG}")],
+                        wait: false
                 }
             }
         }
